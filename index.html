@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taula Periòdica v21 (Desktop)</title>
+    
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('pt_theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+            }
+        })();
+    </script>
+
+    <style>
+        /* --- VARIABLES --- */
+        :root {
+            --bg-body: #f4f4f9; --text-main: #222; --text-sec: #555;
+            --bg-card: #ffffff; --border-color: #ddd; --bg-hover: #eaeaea;
+            --primary: #007bff; --primary-hover: #0056b3;
+            --cell-bg: #e0e0e0; --cell-border: #ccc; --cell-hover: #d0d0d0;
+            --shadow: rgba(0,0,0,0.1);
+            
+            /* ESTATS */
+            --st-perfect-bg: #d4edda; --st-perfect-br: #28a745; --st-perfect-tx: #155724;
+            --st-good-bg: #d9f0c4;    --st-good-br: #8bc34a; --st-good-tx: #33691e;
+            --st-avg-bg: #fff3cd;     --st-avg-br: #ffc107;  --st-avg-tx: #856404;
+            --st-bad-bg: #f8d7da;     --st-bad-br: #dc3545;  --st-bad-tx: #721c24;
+            --st-peek-bg: #cce5ff;    --st-peek-br: #004085; --st-peek-tx: #004085;
+        }
+
+        html.dark-mode {
+            --bg-body: #121212; --text-main: #e0e0e0; --text-sec: #aaaaaa;
+            --bg-card: #1e1e1e; --border-color: #333; --bg-hover: #2c2c2c;
+            --primary: #4da3ff; --primary-hover: #0069d9;
+            --cell-bg: #2d2d2d; --cell-border: #444; --cell-hover: #404040;
+            --shadow: rgba(0,0,0,0.5);
+            --st-perfect-bg: #1e4620; --st-perfect-br: #28a745; --st-perfect-tx: #d4edda;
+            --st-good-bg: #334418;    --st-good-br: #8bc34a; --st-good-tx: #e6f7d6;
+            --st-avg-bg: #4d3e07;     --st-avg-br: #ffc107;  --st-avg-tx: #fff3cd;
+            --st-bad-bg: #5a1e23;     --st-bad-br: #dc3545;  --st-bad-tx: #f8d7da;
+            --st-peek-bg: #08325e;    --st-peek-br: #004085; --st-peek-tx: #cce5ff;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg-body); color: var(--text-main); 
+            display: flex; flex-direction: column; align-items: center; 
+            padding: 20px; transition: background-color 0.3s, color 0.3s; margin: 0;
+        }
+
+        /* --- MOBILE WARNING OVERLAY --- */
+        #mobile-warning {
+            display: none; /* Amagat per defecte */
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-body); z-index: 9999;
+            flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 20px; box-sizing: border-box;
+        }
+        #mobile-warning h1 { font-size: 3rem; margin-bottom: 20px; }
+        #mobile-warning p { font-size: 1.5rem; color: var(--text-sec); max-width: 600px; }
+
+        /* --- ACTIVAR BLOQUEIG SI LA PANTALLA ÉS PETITA --- */
+        @media (max-width: 1024px) {
+            #mobile-warning { display: flex !important; }
+            .app-container { display: none !important; }
+        }
+
+        .title-container { text-align: center; margin-bottom: 20px; width: 100%; }
+        h1.main-title { font-size: 3rem; font-weight: 800; margin: 0; letter-spacing: 1px; color: var(--text-main); }
+        p.subtitle { font-size: 1.2rem; margin: 5px 0 0 0; color: var(--text-sec); font-weight: 300; }
+        p.version { font-size: 0.9rem; margin: 5px 0 0 0; color: var(--text-sec); opacity: 0.7; }
+
+        .header-controls { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 100;}
+        .icon-btn {
+            background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main);
+            padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 16px;
+            box-shadow: 0 2px 5px var(--shadow); transition: 0.3s;
+        }
+
+        #setup-screen { 
+            background: var(--bg-card); padding: 30px; border-radius: 12px; 
+            box-shadow: 0 4px 15px var(--shadow); max-width: 1000px; width: 100%; 
+            display: flex; flex-direction: column; gap: 20px;
+        }
+        
+        .setup-layout { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; }
+        .controls-col { flex: 1; min-width: 320px; }
+        .preview-col { 
+            flex: 1; min-width: 300px; display: flex; flex-direction: column; align-items: center; 
+            background: var(--bg-body); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);
+        }
+
+        .selector-block h3 { margin-bottom: 10px; border-bottom: 2px solid var(--border-color); padding-bottom: 5px;}
+        .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+        
+        .checkbox-item { 
+            display: flex; align-items: center; justify-content: flex-start; background: var(--bg-hover); 
+            border: 1px solid var(--border-color); border-radius: 4px; padding: 8px 6px; 
+            cursor: pointer; font-size: 13px; user-select: none; white-space: nowrap; overflow: hidden;
+            transition: 0.2s;
+        }
+        .checkbox-item:hover { background: var(--border-color); }
+        .checkbox-item input { margin-right: 4px; flex-shrink: 0; transform: scale(1.1); }
+
+        .special-rows-container { display: flex; gap: 10px; margin-top: 10px; width: 100%; }
+        .checkbox-item.special-wide {
+            flex: 1; justify-content: center; font-weight: bold; background-color: var(--bg-hover); border: 2px solid var(--border-color);
+        }
+
+        .options-section { display:flex; gap: 30px; margin-top: 20px; padding-top:10px; border-top: 1px solid var(--border-color); flex-wrap: wrap;}
+        .opt-group { flex: 1; min-width: 140px; }
+        .opt-label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; font-size: 14px; }
+
+        .slider-container { margin-top: 10px; }
+        .slider-label { font-size: 12px; color: var(--text-sec); display: flex; justify-content: space-between; }
+        input[type=range] { width: 100%; margin: 5px 0; }
+
+        button.start-btn { 
+            background-color: var(--primary); color: white; border: none; padding: 15px 40px; 
+            border-radius: 8px; font-size: 20px; cursor: pointer; margin-top: 20px; width: 100%; font-weight: bold;
+            transition: 0.2s;
+        }
+        button.start-btn:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
+
+        #game-screen { display: none; width: 100%; overflow-x: auto; padding-bottom: 50px; text-align: center;}
+        
+        .periodic-table {
+            display: grid; grid-template-columns: repeat(18, minmax(54px, 1fr)); grid-template-rows: repeat(10, 72px); 
+            gap: 4px; margin: 20px auto; min-width: 950px; max-width: 1300px;
+        }
+
+        .periodic-table.preview-mode {
+            min-width: unset; width: 100%; max-width: 500px;
+            grid-template-columns: repeat(18, 1fr); grid-template-rows: repeat(10, 20px);
+            gap: 1px; margin: 0; pointer-events: none;
+        }
+        .periodic-table.preview-mode .element-cell { border-width: 1px; font-size: 0; border-radius: 1px; }
+        .periodic-table.preview-mode .element-cell.preview-active { background-color: var(--primary); border-color: var(--primary-hover); opacity: 0.8; }
+        
+        .element-cell {
+            background-color: var(--cell-bg); border: 2px solid var(--cell-border); color: var(--text-main);
+            border-radius: 4px; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            cursor: pointer; position: relative; padding: 2px; box-sizing: border-box;
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), z-index 0.1s, box-shadow 0.15s;
+            user-select: none;
+        }
+        
+        /* HOVER AGRESSIU (PC ONLY) */
+        .element-cell:not(.done):hover {
+            transform: scale(1.35); 
+            z-index: 100;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.25); 
+            border-color: var(--text-main);
+        }
+
+        .element-cell.auto-selected { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary); z-index: 10; }
+        .element-cell.done { cursor: default; transform: none !important; z-index: 1 !important; }
+        
+        .element-cell.st-perfect { background-color: var(--st-perfect-bg); border-color: var(--st-perfect-br); color: var(--st-perfect-tx); }
+        .element-cell.st-good    { background-color: var(--st-good-bg);    border-color: var(--st-good-br);    color: var(--st-good-tx); }
+        .element-cell.st-avg     { background-color: var(--st-avg-bg);     border-color: var(--st-avg-br);     color: var(--st-avg-tx); }
+        .element-cell.st-bad     { background-color: var(--st-bad-bg);     border-color: var(--st-bad-br);     color: var(--st-bad-tx); }
+        .element-cell.st-peek    { background-color: var(--st-peek-bg);    border-color: var(--st-peek-br);    color: var(--st-peek-tx); }
+
+        .cell-content { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; pointer-events: none; }
+        .atomic-num { font-size: 11px; align-self: flex-start; opacity: 0.6; line-height: 1; margin-bottom: 2px;}
+        .symbol { 
+            font-weight: bold; font-size: 22px; 
+            flex-grow: 1; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s; margin-top: -4px;
+        }
+        .bottom-info {
+            display: flex; flex-direction: column; align-items: center; width: 100%; justify-content: flex-end; margin-bottom: 1px;
+        }
+        .name-small { 
+            font-size: 10px; width: 100%; text-align: center; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+            opacity: 0; transition: opacity 0.3s; line-height: 1.1;
+        }
+        .atomic-mass { 
+            font-size: 9px; opacity: 0; transition: opacity 0.3s; 
+            margin-top: 1px; font-family: 'Courier New', monospace; letter-spacing: -0.5px;
+        }
+
+        .element-cell.done .symbol, .element-cell.done .name-small, .element-cell.done .atomic-num, .element-cell.done .atomic-mass { opacity: 1; }
+        .element-cell.show-s .symbol { opacity: 1; color: var(--primary); font-weight: 900; }
+        .element-cell.show-n .name-small { opacity: 1; color: var(--primary); }
+        .element-cell.show-z .atomic-num { opacity: 1; color: var(--primary); font-weight: bold; }
+        .element-cell.show-m .atomic-mass { opacity: 1; color: var(--primary); }
+
+        .element-cell.peeking { background-color: #fff3cd !important; border-color: #ffc107 !important; }
+        .element-cell.peeking .symbol { opacity: 1 !important; color: #d39e00 !important; }
+        .element-cell.peeking .name-small { opacity: 1 !important; color: #d39e00 !important; }
+        .element-cell.peeking .atomic-num { opacity: 1 !important; color: #d39e00 !important; }
+        .element-cell.peeking .atomic-mass { opacity: 1 !important; color: #d39e00 !important; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-box { background: var(--bg-card); padding: 30px; border-radius: 10px; width: 350px; box-shadow: 0 10px 25px var(--shadow); color: var(--text-main); }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        .input-group input { width: 100%; padding: 10px; border: 1px solid var(--border-color); background: var(--bg-body); color: var(--text-main); border-radius: 4px; font-size: 16px; box-sizing: border-box; }
+        .modal-buttons { display: flex; justify-content: space-between; margin-top: 20px; gap: 10px; }
+        button.action-btn { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-check { background: #28a745; color: white; }
+        .btn-cancel { background: #dc3545; color: white; }
+        .error-msg { color: #dc3545; font-weight: bold; margin-top: 15px; display: none; text-align: center; background: rgba(220, 53, 69, 0.1); padding: 10px; border-radius: 5px; }
+        .hint-text { color: #856404; font-size: 14px; margin-top: 5px; display:block; }
+        .stats-summary { display: flex; justify-content: space-around; margin-bottom: 20px; text-align: center; }
+        .stat-box { background: var(--bg-hover); padding: 10px; border-radius: 8px; min-width: 100px; }
+        .stat-val { font-size: 20px; font-weight: bold; display: block; }
+        .stat-label { font-size: 12px; color: var(--text-sec); }
+        details { margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 5px; overflow: hidden; text-align: left; }
+        summary { background: var(--bg-hover); padding: 10px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .badge { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+    </style>
+</head>
+<body>
+
+    <div id="mobile-warning">
+        <h1>⚠️</h1>
+        <p>Actualment aquesta pàgina web no és compatible amb el dispositiu emparat.</p>
+        <p style="font-size: 1rem; margin-top:20px;">Si us plau, utilitza un ordinador.</p>
+    </div>
+
+    <div class="app-container" style="width: 100%; display:flex; flex-direction:column; align-items:center;">
+        
+        <div class="header-controls">
+            <button class="icon-btn" onclick="showStats()" title="Estadístiques">📊</button>
+            <button class="icon-btn" onclick="toggleTheme()" id="theme-btn" title="Mode Fosc/Clar">🌙</button>
+        </div>
+
+        <div class="title-container">
+            <h1 class="main-title">Taula Periòdica</h1>
+            <p class="subtitle">Exercicis i pràctica</p>
+            <p class="version">Versió 21 (Desktop Only)</p>
+        </div>
+
+        <div id="setup-screen">
+            <div class="setup-layout">
+                <div class="controls-col">
+                    <div class="selector-block">
+                        <h3>1. Columnes (Grups)</h3>
+                        <div class="checkbox-grid" id="group-checkboxes"></div>
+                        <div style="margin-top:8px; display:flex; gap:10px;">
+                            <span style="font-size: 13px; color: var(--primary); cursor:pointer;" onclick="toggleAll('g', true); saveConfig()">✅ Tot</span>
+                            <span style="font-size: 13px; color: var(--text-sec); cursor:pointer;" onclick="toggleAll('g', false); saveConfig()">❌ Res</span>
+                        </div>
+                    </div>
+                    <div class="selector-block" style="margin-top:20px;">
+                        <h3>2. Files (Períodes)</h3>
+                        <div class="checkbox-grid" id="period-checkboxes-std"></div>
+                        
+                        <div class="special-rows-container">
+                            <label class="checkbox-item special-wide">
+                                <input type="checkbox" id="lant" onchange="saveConfig(); updatePreview()"> 
+                                P6 (Lantànids)
+                            </label>
+                            <label class="checkbox-item special-wide">
+                                <input type="checkbox" id="act" onchange="saveConfig(); updatePreview()"> 
+                                P7 (Actínids)
+                            </label>
+                        </div>
+
+                        <div style="margin-top:8px; display:flex; gap:10px;">
+                            <span style="font-size: 13px; color: var(--primary); cursor:pointer;" onclick="toggleAll('p', true); saveConfig()">✅ Tot</span>
+                            <span style="font-size: 13px; color: var(--text-sec); cursor:pointer;" onclick="toggleAll('p', false); saveConfig()">❌ Res</span>
+                        </div>
+                    </div>
+
+                    <div class="options-section">
+                        <div class="opt-group">
+                            <h4>Dificultat</h4>
+                            <label class="opt-label"><input type="checkbox" id="req-numbers" onchange="saveConfig(); updatePreview()"> Demanar número (Z)</label>
+                            <label class="opt-label"><input type="checkbox" id="req-mass" onchange="saveConfig(); updatePreview()"> Demanar Massa (u)</label>
+                            
+                            <div class="slider-container">
+                                <div class="slider-label"><span>Precisió Massa</span><span id="prec-val">2 dec.</span></div>
+                                <input type="range" id="mass-precision" min="0" max="4" value="2" oninput="saveConfig(); updatePrecisionLabel()">
+                            </div>
+                        </div>
+                        <div class="opt-group">
+                            <h4>Pistes (Ajudes)</h4>
+                            <label class="opt-label"><input type="checkbox" id="hint-symbols" onchange="saveConfig(); updatePreview()"> Símbol</label>
+                            <label class="opt-label"><input type="checkbox" id="hint-names" onchange="saveConfig(); updatePreview()"> Nom</label>
+                            <label class="opt-label"><input type="checkbox" id="hint-numbers" onchange="handleHint('z'); saveConfig()"> Número (Z)</label>
+                            <label class="opt-label"><input type="checkbox" id="hint-mass" onchange="handleHint('m'); saveConfig()"> Massa (u)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="preview-col">
+                    <h4 style="margin-top:0; color:var(--text-sec);">Previsualització</h4>
+                    <div id="preview-grid" class="periodic-table preview-mode"></div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="startGame()">COMENÇAR</button>
+        </div>
+
+        <div id="game-screen">
+            <button onclick="goBack()" style="background:var(--text-sec); color: white; border:none; padding: 8px 15px; border-radius:4px; cursor:pointer; margin: 10px 0;">⬅ Tornar i Editar</button>
+            <div class="periodic-table" id="pt-grid"></div>
+            <div style="text-align:center; color: var(--text-sec); font-size:12px; margin-top:10px;">
+                Mantingues premuda la tecla ESPAI per veure la solució (Peek Mode)
+            </div>
+        </div>
+
+        <div id="modal-overlay" class="modal-overlay">
+            <div id="modal-box" class="modal-box">
+                <h3 style="margin-top:0">Endevina l'element</h3>
+                <div class="input-group"><label>Símbol</label><input type="text" id="input-symbol" placeholder="Ex: Fe" autocomplete="off"></div>
+                <div class="input-group"><label>Nom</label><input type="text" id="input-name" placeholder="Ex: Ferro" autocomplete="off"></div>
+                <div class="input-group" id="input-z-group" style="display:none;"><label>Número (Z)</label><input type="number" id="input-z"></div>
+                <div class="input-group" id="input-m-group" style="display:none;"><label>Massa Atòmica (u)</label><input type="text" id="input-m" placeholder="Ex: 1.01"></div>
+                <div class="modal-buttons">
+                    <button class="action-btn btn-cancel" onclick="closeModal()">Tancar</button>
+                    <button class="action-btn btn-check" onclick="checkAnswer()">Comprovar</button>
+                </div>
+                <div class="error-msg" id="error-msg"></div>
+            </div>
+        </div>
+
+        <div id="stats-overlay" class="modal-overlay">
+            <div class="modal-box" style="width: 500px;">
+                <h2 style="margin-top:0; text-align:center;">📊 Resultats</h2>
+                <div class="stats-summary">
+                    <div class="stat-box"><span class="stat-val" id="st-time">00:00</span><span class="stat-label">Temps Total</span></div>
+                    <div class="stat-box"><span class="stat-val" id="st-avg">0.0s</span><span class="stat-label">Mitjana/Elem</span></div>
+                    <div class="stat-box"><span class="stat-val" id="st-total">0/0</span><span class="stat-label">Completats</span></div>
+                </div>
+                <div id="stats-lists"></div>
+                <button class="action-btn btn-check" style="width:100%; margin-top:20px;" onclick="document.getElementById('stats-overlay').style.display='none'">Tancar</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const db = [
+        {z:1, s:"H", n:"Hidrogen", m:1.008, g:1, p:1}, {z:2, s:"He", n:"Heli", m:4.0026, g:18, p:1},
+        {z:3, s:"Li", n:"Liti", m:6.94, g:1, p:2}, {z:4, s:"Be", n:"Beril·li", m:9.0122, g:2, p:2}, {z:5, s:"B", n:"Bor", m:10.81, g:13, p:2}, {z:6, s:"C", n:"Carboni", m:12.011, g:14, p:2}, {z:7, s:"N", n:"Nitrogen", m:14.007, g:15, p:2}, {z:8, s:"O", n:"Oxigen", m:15.999, g:16, p:2}, {z:9, s:"F", n:"Fluor", m:18.998, g:17, p:2}, {z:10, s:"Ne", n:"Neó", m:20.180, g:18, p:2},
+        {z:11, s:"Na", n:"Sodi", m:22.990, g:1, p:3}, {z:12, s:"Mg", n:"Magnesi", m:24.305, g:2, p:3}, {z:13, s:"Al", n:"Alumini", m:26.982, g:13, p:3}, {z:14, s:"Si", n:"Silici", m:28.085, g:14, p:3}, {z:15, s:"P", n:"Fòsfor", m:30.974, g:15, p:3}, {z:16, s:"S", n:"Sofre", m:32.06, g:16, p:3}, {z:17, s:"Cl", n:"Clor", m:35.45, g:17, p:3}, {z:18, s:"Ar", n:"Argó", m:39.948, g:18, p:3},
+        {z:19, s:"K", n:"Potassi", m:39.098, g:1, p:4}, {z:20, s:"Ca", n:"Calci", m:40.078, g:2, p:4}, {z:21, s:"Sc", n:"Escandi", m:44.956, g:3, p:4}, {z:22, s:"Ti", n:"Titani", m:47.867, g:4, p:4}, {z:23, s:"V", n:"Vanadi", m:50.942, g:5, p:4}, {z:24, s:"Cr", n:"Crom", m:51.996, g:6, p:4}, {z:25, s:"Mn", n:"Manganès", m:54.938, g:7, p:4}, {z:26, s:"Fe", n:"Ferro", m:55.845, g:8, p:4}, {z:27, s:"Co", n:"Cobalt", m:58.933, g:9, p:4}, {z:28, s:"Ni", n:"Níquel", m:58.693, g:10, p:4}, {z:29, s:"Cu", n:"Coure", m:63.546, g:11, p:4}, {z:30, s:"Zn", n:"Zinc", m:65.38, g:12, p:4}, {z:31, s:"Ga", n:"Gal·li", m:69.723, g:13, p:4}, {z:32, s:"Ge", n:"Germani", m:72.630, g:14, p:4}, {z:33, s:"As", n:"Arsènic", m:74.922, g:15, p:4}, {z:34, s:"Se", n:"Seleni", m:78.971, g:16, p:4}, {z:35, s:"Br", n:"Brom", m:79.904, g:17, p:4}, {z:36, s:"Kr", n:"Criptó", m:83.798, g:18, p:4},
+        {z:37, s:"Rb", n:"Rubidi", m:85.468, g:1, p:5}, {z:38, s:"Sr", n:"Estronci", m:87.62, g:2, p:5}, {z:39, s:"Y", n:"Itri", m:88.906, g:3, p:5}, {z:40, s:"Zr", n:"Zirconi", m:91.224, g:4, p:5}, {z:41, s:"Nb", n:"Niobi", m:92.906, g:5, p:5}, {z:42, s:"Mo", n:"Molibdè", m:95.95, g:6, p:5}, {z:43, s:"Tc", n:"Tecneci", m:98, g:7, p:5}, {z:44, s:"Ru", n:"Ruteni", m:101.07, g:8, p:5}, {z:45, s:"Rh", n:"Rodi", m:102.91, g:9, p:5}, {z:46, s:"Pd", n:"Pal·ladi", m:106.42, g:10, p:5}, {z:47, s:"Ag", n:"Argent", m:107.87, g:11, p:5}, {z:48, s:"Cd", n:"Cadmi", m:112.41, g:12, p:5}, {z:49, s:"In", n:"Indi", m:114.82, g:13, p:5}, {z:50, s:"Sn", n:"Estany", m:118.71, g:14, p:5}, {z:51, s:"Sb", n:"Antimoni", m:121.76, g:15, p:5}, {z:52, s:"Te", n:"Tel·luri", m:127.60, g:16, p:5}, {z:53, s:"I", n:"Iode", m:126.90, g:17, p:5}, {z:54, s:"Xe", n:"Xenó", m:131.29, g:18, p:5},
+        {z:55, s:"Cs", n:"Cesi", m:132.91, g:1, p:6}, {z:56, s:"Ba", n:"Bari", m:137.33, g:2, p:6}, {z:57, s:"La", n:"Lantà", m:138.91, g:3, p:6}, {z:72, s:"Hf", n:"Hafni", m:178.49, g:4, p:6}, {z:73, s:"Ta", n:"Tàntal", m:180.95, g:5, p:6}, {z:74, s:"W", n:"Tungstè", m:183.84, g:6, p:6}, {z:75, s:"Re", n:"Reni", m:186.21, g:7, p:6}, {z:76, s:"Os", n:"Osmi", m:190.23, g:8, p:6}, {z:77, s:"Ir", n:"Iridi", m:192.22, g:9, p:6}, {z:78, s:"Pt", n:"Platí", m:195.08, g:10, p:6}, {z:79, s:"Au", n:"Or", m:196.97, g:11, p:6}, {z:80, s:"Hg", n:"Mercuri", m:200.59, g:12, p:6}, {z:81, s:"Tl", n:"Tal·li", m:204.38, g:13, p:6}, {z:82, s:"Pb", n:"Plom", m:207.2, g:14, p:6}, {z:83, s:"Bi", n:"Bismut", m:208.98, g:15, p:6}, {z:84, s:"Po", n:"Poloni", m:209, g:16, p:6}, {z:85, s:"At", n:"Àstat", m:210, g:17, p:6}, {z:86, s:"Rn", n:"Radó", m:222, g:18, p:6},
+        {z:87, s:"Fr", n:"Franci", m:223, g:1, p:7}, {z:88, s:"Ra", n:"Radi", m:226, g:2, p:7}, {z:89, s:"Ac", n:"Actini", m:227, g:3, p:7}, {z:104, s:"Rf", n:"Rutherfordi", m:267, g:4, p:7}, {z:105, s:"Db", n:"Dubni", m:268, g:5, p:7}, {z:106, s:"Sg", n:"Seaborgi", m:269, g:6, p:7}, {z:107, s:"Bh", n:"Bohri", m:270, g:7, p:7}, {z:108, s:"Hs", n:"Hassi", m:277, g:8, p:7}, {z:109, s:"Mt", n:"Meitneri", m:278, g:9, p:7}, {z:110, s:"Ds", n:"Darmstadti", m:281, g:10, p:7}, {z:111, s:"Rg", n:"Roentgeni", m:282, g:11, p:7}, {z:112, s:"Cn", n:"Copernici", m:285, g:12, p:7}, {z:113, s:"Nh", n:"Nihoni", m:286, g:13, p:7}, {z:114, s:"Fl", n:"Flerovi", m:289, g:14, p:7}, {z:115, s:"Mc", n:"Moscovi", m:290, g:15, p:7}, {z:116, s:"Lv", n:"Livermori", m:293, g:16, p:7}, {z:117, s:"Ts", n:"Tennessin", m:294, g:17, p:7}, {z:118, s:"Og", n:"Oganessó", m:294, g:18, p:7},
+        {z:58, s:"Ce", n:"Ceri", m:140.12, g:null, p:6, vRow:9, vCol:4}, {z:59, s:"Pr", n:"Praseodimi", m:140.91, g:null, p:6, vRow:9, vCol:5}, {z:60, s:"Nd", n:"Neodimi", m:144.24, g:null, p:6, vRow:9, vCol:6}, {z:61, s:"Pm", n:"Prometi", m:145, g:null, p:6, vRow:9, vCol:7}, {z:62, s:"Sm", n:"Samari", m:150.36, g:null, p:6, vRow:9, vCol:8}, {z:63, s:"Eu", n:"Europi", m:151.96, g:null, p:6, vRow:9, vCol:9}, {z:64, s:"Gd", n:"Gadolini", m:157.25, g:null, p:6, vRow:9, vCol:10}, {z:65, s:"Tb", n:"Terbi", m:158.93, g:null, p:6, vRow:9, vCol:11}, {z:66, s:"Dy", n:"Disprosi", m:162.50, g:null, p:6, vRow:9, vCol:12}, {z:67, s:"Ho", n:"Holmi", m:164.93, g:null, p:6, vRow:9, vCol:13}, {z:68, s:"Er", n:"Erbi", m:167.26, g:null, p:6, vRow:9, vCol:14}, {z:69, s:"Tm", n:"Tul·li", m:168.93, g:null, p:6, vRow:9, vCol:15}, {z:70, s:"Yb", n:"Iterbi", m:173.05, g:null, p:6, vRow:9, vCol:16}, {z:71, s:"Lu", n:"Luteci", m:174.97, g:null, p:6, vRow:9, vCol:17},
+        {z:90, s:"Th", n:"Tori", m:232.04, g:null, p:7, vRow:10, vCol:4}, {z:91, s:"Pa", n:"Protactini", m:231.04, g:null, p:7, vRow:10, vCol:5}, {z:92, s:"U", n:"Urani", m:238.03, g:null, p:7, vRow:10, vCol:6}, {z:93, s:"Np", n:"Neptuni", m:237, g:null, p:7, vRow:10, vCol:7}, {z:94, s:"Pu", n:"Plutoni", m:244, g:null, p:7, vRow:10, vCol:8}, {z:95, s:"Am", n:"Americi", m:243, g:null, p:7, vRow:10, vCol:9}, {z:96, s:"Cm", n:"Curi", m:247, g:null, p:7, vRow:10, vCol:10}, {z:97, s:"Bk", n:"Berkeli", m:247, g:null, p:7, vRow:10, vCol:11}, {z:98, s:"Cf", n:"Californi", m:251, g:null, p:7, vRow:10, vCol:12}, {z:99, s:"Es", n:"Einsteini", m:252, g:null, p:7, vRow:10, vCol:13}, {z:100, s:"Fm", n:"Fermi", m:257, g:null, p:7, vRow:10, vCol:14}, {z:101, s:"Md", n:"Mendelevi", m:258, g:null, p:7, vRow:10, vCol:15}, {z:102, s:"No", n:"Nobeli", m:259, g:null, p:7, vRow:10, vCol:16}, {z:103, s:"Lr", n:"Lawrenci", m:262, g:null, p:7, vRow:10, vCol:17}
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => { 
+        const btn = document.getElementById('theme-btn');
+        if (document.documentElement.classList.contains('dark-mode')) btn.innerText = '☀️';
+        initCheckboxes(); 
+        loadConfig(); 
+        updatePrecisionLabel();
+        updatePreview();
+    });
+
+    function toggleTheme() {
+        document.documentElement.classList.toggle('dark-mode');
+        const isDark = document.documentElement.classList.contains('dark-mode');
+        document.getElementById('theme-btn').innerText = isDark ? '☀️' : '🌙';
+        localStorage.setItem('pt_theme', isDark ? 'dark' : 'light');
+    }
+
+    function saveConfig() {
+        const config = {
+            groups: [], periods: [],
+            lant: document.getElementById('lant').checked,
+            act: document.getElementById('act').checked,
+            reqZ: document.getElementById('req-numbers').checked,
+            reqM: document.getElementById('req-mass').checked,
+            hintS: document.getElementById('hint-symbols').checked,
+            hintN: document.getElementById('hint-names').checked,
+            hintZ: document.getElementById('hint-numbers').checked,
+            hintM: document.getElementById('hint-mass').checked,
+            prec: document.getElementById('mass-precision').value
+        };
+        for(let i=1; i<=18; i++) { if(document.getElementById(`g${i}`).checked) config.groups.push(i); }
+        for(let i=1; i<=7; i++) { const el = document.getElementById(`p${i}`); if(el && el.checked) config.periods.push(i); }
+        
+        localStorage.setItem('pt_config_v21', JSON.stringify(config));
+    }
+
+    function loadConfig() {
+        const json = localStorage.getItem('pt_config_v21');
+        if(!json) { toggleAll('g', true); toggleAll('p', true); return; }
+        try {
+            const config = JSON.parse(json);
+            for(let i=1; i<=18; i++) { const el = document.getElementById(`g${i}`); if(el) el.checked = false; }
+            for(let i=1; i<=7; i++) { const el = document.getElementById(`p${i}`); if(el) el.checked = false; }
+            if (config.groups) config.groups.forEach(i => { const el = document.getElementById(`g${i}`); if(el) el.checked = true; });
+            if (config.periods) config.periods.forEach(i => { const el = document.getElementById(`p${i}`); if(el) el.checked = true; });
+            if(document.getElementById('lant')) document.getElementById('lant').checked = !!config.lant;
+            if(document.getElementById('act')) document.getElementById('act').checked = !!config.act;
+            document.getElementById('req-numbers').checked = !!config.reqZ;
+            document.getElementById('req-mass').checked = !!config.reqM;
+            document.getElementById('hint-symbols').checked = !!config.hintS;
+            document.getElementById('hint-names').checked = !!config.hintN;
+            document.getElementById('hint-numbers').checked = !!config.hintZ;
+            document.getElementById('hint-mass').checked = !!config.hintM;
+            document.getElementById('mass-precision').value = config.prec || 2;
+        } catch (e) {
+            console.warn("Error config load, resetting");
+            toggleAll('g', true); toggleAll('p', true);
+        }
+    }
+
+    function initCheckboxes() {
+        const groupCont = document.getElementById('group-checkboxes');
+        let html = '';
+        for (let i=1; i<=18; i++) html += `<label class="checkbox-item"><input type="checkbox" value="${i}" id="g${i}" onchange="saveConfig(); updatePreview()"> G${i}</label>`;
+        groupCont.innerHTML = html;
+        const periodCont = document.getElementById('period-checkboxes-std');
+        html = '';
+        for (let i=1; i<=7; i++) html += `<label class="checkbox-item"><input type="checkbox" value="${i}" id="p${i}" onchange="saveConfig(); updatePreview()"> P${i}</label>`;
+        periodCont.innerHTML = html;
+    }
+
+    function toggleAll(type, state) {
+        if (type === 'g') { for (let i=1; i<=18; i++) { const el = document.getElementById(`g${i}`); if(el) el.checked = state; } } 
+        else { 
+            for (let i=1; i<=7; i++) { const el = document.getElementById(`p${i}`); if(el) el.checked = state; } 
+            document.getElementById('lant').checked = state; 
+            document.getElementById('act').checked = state; 
+        }
+        saveConfig(); updatePreview();
+    }
+
+    function handleHint(type) {
+        if (type === 'z') { const h = document.getElementById('hint-numbers').checked; if(h) document.getElementById('req-numbers').checked = true; } 
+        else if (type === 'm') { const h = document.getElementById('hint-mass').checked; if(h) document.getElementById('req-mass').checked = true; }
+        saveConfig(); updatePreview();
+    }
+    
+    function updatePrecisionLabel() {
+        const val = document.getElementById('mass-precision').value;
+        const txt = val == 0 ? "Enter (0 dec)" : val + " decimals";
+        document.getElementById('prec-val').innerText = txt;
+        updatePreview(); 
+    }
+
+    function getActiveElements() {
+        const selGroups = [];
+        for (let i=1; i<=18; i++) if(document.getElementById(`g${i}`).checked) selGroups.push(i);
+        const selPeriods = [];
+        for (let i=1; i<=7; i++) { const el = document.getElementById(`p${i}`); if(el && el.checked) selPeriods.push(i); }
+        const wantLant = document.getElementById('lant').checked;
+        const wantAct = document.getElementById('act').checked;
+        return db.filter(el => {
+            if (el.vRow) { if (el.p === 6 && wantLant) return true; if (el.p === 7 && wantAct) return true; return false; } 
+            else { const inGroup = el.g !== null && selGroups.includes(el.g); const inPeriod = selPeriods.includes(el.p); return inGroup || inPeriod; }
+        });
+    }
+
+    function updatePreview() {
+        const activeZ = getActiveElements().map(e => e.z);
+        const grid = document.getElementById('preview-grid');
+        grid.innerHTML = '';
+        db.forEach(el => {
+            const cell = document.createElement('div');
+            cell.className = 'element-cell';
+            if (activeZ.includes(el.z)) cell.classList.add('preview-active');
+            let col = el.g, row = el.p;
+            if (el.vRow) { row = el.vRow; col = el.vCol; } 
+            cell.style.gridColumn = col; cell.style.gridRow = row;
+            grid.appendChild(cell);
+        });
+    }
+
+    function goBack() { location.reload(); }
+
+    let gameState = { startTime: null, elements: {}, activeList: [], verticalOrder: [] };
+    let conf = { reqZ: false, reqM: false, hintS: false, hintN: false, hintZ: false, hintM: false, prec: 2 };
+    let currentTarget = null; let currentCell = null;
+    let autoSelectedZ = null;
+    let hoveredZ = null;
+
+    function startGame() {
+        const gameElements = getActiveElements();
+        if (gameElements.length === 0) { alert("Tria algun element!"); return; }
+        conf.reqZ = document.getElementById('req-numbers').checked;
+        conf.reqM = document.getElementById('req-mass').checked;
+        conf.hintS = document.getElementById('hint-symbols').checked;
+        conf.hintN = document.getElementById('hint-names').checked;
+        conf.hintZ = document.getElementById('hint-numbers').checked;
+        conf.hintM = document.getElementById('hint-mass').checked;
+        conf.prec = document.getElementById('mass-precision').value;
+        gameState.startTime = Date.now();
+        gameState.elements = {};
+        gameState.activeList = gameElements.map(e => e.z);
+        gameState.verticalOrder = [...gameElements].sort((a,b) => {
+            const colA = a.vCol || a.g; const colB = b.vCol || b.g;
+            if (colA !== colB) return colA - colB;
+            const rowA = a.vRow || a.p; const rowB = b.vRow || b.p;
+            return rowA - rowB;
+        }).map(e => e.z);
+        gameElements.forEach(el => { gameState.elements[el.z] = { attempts: 0, status: 'pending', peeked: false }; });
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+        document.querySelector('.title-container').style.display = 'none';
+        document.querySelector('.header-controls').style.top = '10px';
+        renderGrid(gameElements);
+        
+        document.addEventListener('keydown', handleGlobalKeyDown);
+        document.addEventListener('keyup', handleGlobalKeyUp);
+    }
+
+    function handleGlobalKeyDown(e) {
+        if (e.code === 'Space' && hoveredZ && document.getElementById('modal-overlay').style.display === 'none') {
+            e.preventDefault(); 
+            const cell = document.querySelector(`.element-cell[data-z="${hoveredZ}"]`);
+            if (cell && !cell.classList.contains('done')) {
+                cell.classList.add('peeking');
+                gameState.elements[hoveredZ].peeked = true;
+            }
+        }
+        if (e.key === 'Enter' && document.getElementById('modal-overlay').style.display === 'none') {
+            if (autoSelectedZ) {
+                e.preventDefault(); e.stopPropagation();
+                const el = db.find(x => x.z === autoSelectedZ);
+                const cell = document.querySelector(`.element-cell[data-z="${autoSelectedZ}"]`);
+                if (el && cell && !cell.classList.contains('done')) openModal(el, cell);
+            }
+        }
+    }
+
+    function handleGlobalKeyUp(e) {
+        if (e.code === 'Space') {
+            document.querySelectorAll('.peeking').forEach(c => c.classList.remove('peeking'));
+        }
+    }
+
+    function formatMass(m) { return parseFloat(m).toFixed(conf.prec); }
+
+    function renderGrid(elementsToShow) {
+        const grid = document.getElementById('pt-grid');
+        grid.innerHTML = '';
+        elementsToShow.forEach(el => {
+            const cell = document.createElement('div');
+            cell.className = 'element-cell'; cell.dataset.z = el.z;
+            
+            cell.onmouseenter = () => hoveredZ = el.z;
+            cell.onmouseleave = () => hoveredZ = null;
+            cell.onclick = () => openModal(el, cell);
+
+            if (conf.hintS) cell.classList.add('show-s');
+            if (conf.hintN) cell.classList.add('show-n');
+            if (conf.hintZ) cell.classList.add('show-z');
+            if (conf.hintM) cell.classList.add('show-m');
+            let col = el.g, row = el.p;
+            if (el.vRow) { row = el.vRow; col = el.vCol; } 
+            cell.style.gridColumn = col; cell.style.gridRow = row;
+            const mDisplay = formatMass(el.m);
+            cell.innerHTML = `<div class="cell-content"><span class="atomic-num">${el.z}</span><span class="symbol">${el.s}</span><div class="bottom-info"><div class="name-small">${el.n}</div><div class="atomic-mass">${mDisplay}</div></div></div>`;
+            grid.appendChild(cell);
+        });
+    }
+
+    function openModal(el, cell) {
+        if (cell.classList.contains('done')) return;
+        document.querySelectorAll('.peeking').forEach(c => c.classList.remove('peeking'));
+        document.querySelectorAll('.auto-selected').forEach(c => c.classList.remove('auto-selected'));
+        autoSelectedZ = null;
+        currentTarget = el; currentCell = cell;
+        document.getElementById('error-msg').style.display = 'none';
+        document.getElementById('input-symbol').value = conf.hintS ? el.s : '';
+        document.getElementById('input-name').value = conf.hintN ? el.n : '';
+        document.getElementById('input-z').value = conf.hintZ ? el.z : '';
+        document.getElementById('input-m').value = conf.hintM ? formatMass(el.m) : '';
+        document.getElementById('input-z-group').style.display = conf.reqZ ? 'block' : 'none';
+        document.getElementById('input-m-group').style.display = conf.reqM ? 'block' : 'none';
+        document.getElementById('modal-overlay').style.display = 'flex';
+        
+        setTimeout(() => {
+            if (!conf.hintS) document.getElementById('input-symbol').focus();
+            else if (!conf.hintN) document.getElementById('input-name').focus();
+            else if (conf.reqZ && !conf.hintZ) document.getElementById('input-z').focus();
+            else if (conf.reqM && !conf.hintM) document.getElementById('input-m').focus();
+            else document.getElementById('input-name').focus(); 
+        }, 10);
+    }
+
+    function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+
+    function checkAnswer() {
+        const sInput = document.getElementById('input-symbol').value;
+        const nInput = document.getElementById('input-name').value;
+        const zInput = document.getElementById('input-z').value;
+        const mInput = document.getElementById('input-m').value;
+        const clean = (str) => str.trim().toLowerCase().normalize("NFC").replace(/\u0140/g, "l·").replace(/\u013F/g, "l·").replace(/ŀ/g, "l·");
+        const s = clean(sInput);
+        const n = clean(nInput);
+        const targetName = clean(currentTarget.n);
+        const z = parseInt(zInput.trim());
+        let isM = true;
+        if (conf.reqM) {
+            const userMVal = parseFloat(mInput.replace(',','.'));
+            const targetMStr = formatMass(currentTarget.m); 
+            const userMStr = isNaN(userMVal) ? "" : userMVal.toFixed(conf.prec);
+            isM = (userMStr === targetMStr);
+        }
+        const isNameStrict = (n === targetName);
+        const normalizeLoose = (str) => str.replace(/·/g, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const isNameLoose = normalizeLoose(n) === normalizeLoose(targetName);
+        const isSymbol = sInput.trim() === currentTarget.s;
+        let isZ = true; if (conf.reqZ) isZ = (z === currentTarget.z);
+        const state = gameState.elements[currentTarget.z];
+        if (isNameStrict && isSymbol && isZ && isM) { cellSuccess(state.attempts); } 
+        else { state.attempts++; handleFailure(state.attempts, { isNameLoose, isNameStrict, isSymbol, isZ, isM }); }
+    }
+
+    function cellSuccess(prevAttempts) {
+        let finalClass = '', statusKey = '';
+        if (gameState.elements[currentTarget.z].peeked) {
+            finalClass = 'st-peek'; statusKey = 'peeked';
+        } else {
+            if (prevAttempts === 0) { finalClass = 'st-perfect'; statusKey = 'perfect'; }
+            else if (prevAttempts === 1) { finalClass = 'st-good'; statusKey = 'good'; }
+            else { finalClass = 'st-avg'; statusKey = 'avg'; }
+        }
+        currentCell.classList.add('done', finalClass);
+        gameState.elements[currentTarget.z].status = statusKey;
+        closeModal();
+        findNextTarget();
+    }
+
+    function findNextTarget() {
+        const currentIndex = gameState.verticalOrder.indexOf(currentTarget.z);
+        let nextZ = null;
+        for (let i = currentIndex + 1; i < gameState.verticalOrder.length; i++) {
+            const zCandidate = gameState.verticalOrder[i];
+            if (gameState.elements[zCandidate].status === 'pending') { nextZ = zCandidate; break; }
+        }
+        if (nextZ) {
+            autoSelectedZ = nextZ;
+            const nextCell = document.querySelector(`.element-cell[data-z="${nextZ}"]`);
+            if(nextCell) {
+                nextCell.classList.add('auto-selected');
+                nextCell.scrollIntoView({behavior: "smooth", block: "center", inline: "center"});
+            }
+        }
+    }
+
+    function handleFailure(attempts, checks) {
+        const msgBox = document.getElementById('error-msg');
+        msgBox.style.display = 'block';
+        if (attempts === 1) { msgBox.innerHTML = "❌ Incorrecte! Torna-ho a provar."; } 
+        else if (attempts === 2) {
+            let hint = "Revisa les dades!";
+            if (!checks.isSymbol) hint = "Revisa el <b>Símbol</b>!";
+            else if (!checks.isZ) hint = "Revisa el <b>Número (Z)</b>!";
+            else if (!checks.isM) hint = "Revisa la <b>Massa</b> (decimals!)";
+            else if (checks.isNameLoose && !checks.isNameStrict) hint = "Tens lletres bé, però falles en <b>l'ortografia (accents o ·)</b>!";
+            else if (!checks.isNameLoose) hint = "Revisa el <b>Nom</b>!";
+            msgBox.innerHTML = `⚠️ Segon error.<br><span class="hint-text">${hint}</span>`;
+        } else if (attempts >= 3) {
+            currentCell.classList.add('done', 'st-bad');
+            gameState.elements[currentTarget.z].status = 'bad';
+            alert(`Has fallat. Era: ${currentTarget.n} (${currentTarget.s}). Massa: ${formatMass(currentTarget.m)}`);
+            closeModal();
+            findNextTarget();
+        }
+    }
+
+    function showStats() {
+        if (!gameState.startTime) { alert("Comença una partida primer!"); return; }
+        const now = Date.now();
+        const diffSeconds = Math.floor((now - gameState.startTime) / 1000);
+        const counts = { perfect: [], good: [], avg: [], bad: [], pending: [], peeked: [] };
+        let doneCount = 0;
+        gameState.activeList.forEach(z => {
+            const st = gameState.elements[z].status;
+            const el = db.find(e => e.z === z);
+            if(st !== 'pending') doneCount++;
+            if (counts[st]) counts[st].push(el);
+        });
+        const minutes = Math.floor(diffSeconds / 60);
+        const seconds = diffSeconds % 60;
+        document.getElementById('st-time').innerText = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+        const avg = doneCount > 0 ? (diffSeconds / doneCount).toFixed(1) : "0.0";
+        document.getElementById('st-avg').innerText = avg + "s";
+        document.getElementById('st-total').innerText = `${doneCount}/${gameState.activeList.length}`;
+        const container = document.getElementById('stats-lists');
+        container.innerHTML = '';
+        const config = [ { id: 'perfect', label: 'Perfecte', color: '#28a745' }, { id: 'peeked', label: 'Consultat (Blau)', color: '#004085' }, { id: 'good', label: 'Bé (2n intent)', color: '#8bc34a' }, { id: 'avg', label: 'Regular', color: '#ffc107' }, { id: 'bad', label: 'Fallats', color: '#dc3545' }, { id: 'pending', label: 'Pendents', color: '#999' } ];
+        config.forEach(type => {
+            const list = counts[type.id];
+            if (list && list.length > 0) {
+                const details = document.createElement('details');
+                if(type.id === 'bad') details.open = true;
+                const summary = document.createElement('summary');
+                summary.innerHTML = `<span><span class="badge" style="background:${type.color}"></span>${type.label}</span> <span>${list.length}</span>`;
+                const content = document.createElement('div');
+                content.className = 'list-content';
+                content.innerText = list.map(e => e.s).join(', ');
+                details.appendChild(summary); details.appendChild(content);
+                container.appendChild(details);
+            }
+        });
+        document.getElementById('stats-overlay').style.display = 'flex';
+    }
+
+    document.getElementById('modal-box').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.stopPropagation(); 
+            checkAnswer();
+        }
+    });
+
+</script>
+<footer style="text-align: center; padding: 30px; font-size: 13px; color: var(--text-sec); border-top: 1px solid var(--border-color); margin-top: 50px; background: var(--bg-card);">
+    <div style="margin-bottom: 15px;">
+        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">
+            <img alt="Llicència Creative Commons" style="border-width:0; width: 88px; height: 31px;" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" />
+        </a>
+    </div>
+    <p style="margin: 5px 0;">Aquesta obra de <strong>TheGiantChicken7012</strong> està subjecta a una 
+        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" style="color: var(--primary); text-decoration: none;">
+            Llicència Creative Commons Reconeixement-NoComercial-CompartirIgual 4.0 Internacional
+        </a>.
+    </p>
+    <p>© 2026 - Creat per a l'estudi de la Taula Periòdica</p>
+</footer>
+</body>
+</html>

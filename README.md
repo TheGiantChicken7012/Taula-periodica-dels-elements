@@ -1,6 +1,8 @@
 # Taula Periòdica Interactiva
 
-Benvinguts al meu projecte d'estudi de la taula periòdica! He creat aquesta eina per ajudar-me a mi i als meus companys de classe a aprendre els elements de forma més dinàmica.
+[https://thegiantchicken7012.github.io/Taula-periodica-dels-elements/](url)
+
+Benvinguts al meu projecte d'estudi de la taula periòdica! He creat aquesta eina per ajudar tant als meus companys de classe com a mi mateix a aprendre els elements de la taula periòdica de forma més dinàmica.
 
 ## Característiques
 - **Mode Fosc:** Per repassar a qualsevol hora sense cansar la vista.

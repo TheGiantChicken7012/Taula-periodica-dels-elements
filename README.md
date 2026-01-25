@@ -1,6 +1,6 @@
 # Taula Periòdica Interactiva
 
-[https://thegiantchicken7012.github.io/Taula-periodica-dels-elements/](url)
+ https://thegiantchicken7012.github.io/Taula-periodica-dels-elements/
 
 Benvinguts al meu projecte d'estudi de la taula periòdica! He creat aquesta eina per ajudar tant als meus companys de classe com a mi mateix a aprendre els elements de la taula periòdica de forma més dinàmica.
 

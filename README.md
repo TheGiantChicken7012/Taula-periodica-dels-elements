@@ -11,7 +11,7 @@ Benvinguts al meu projecte d'estudi de la taula periòdica! He creat aquesta ein
 
 ## Llicència
 Aquest projecte està sota la llicència **Creative Commons Reconeixement-NoComercial-CompartirIgual 4.0 Internacional (CC BY-NC-SA 4.0)**. 
-Això vol dir que pots compartir-lo i modificar-lo, sempre que no sigui per a finalitats comercials i mantinguis la mateixa llicència.
+Això vol dir que pots compartir-lo i modificar-lo, sempre que no sigui per a finalitat comercial i mantinguis la mateixa llicència.
 
 ---
 ***Creat per a l'assignatura de Química - 2026***

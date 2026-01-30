@@ -5,9 +5,9 @@
 Benvinguts al meu projecte d'estudi de la taula periòdica! He creat aquesta eina per ajudar tant als meus companys de classe com a mi mateix a aprendre els elements de la taula periòdica de forma més dinàmica.
 
 ## Característiques
-- **Mode Fosc:** Per repassar a qualsevol hora sense cansar la vista.
-- **Precisió personalitzada:** Ajusta els decimals de les masses atòmiques.
-- **Feedback immediat:** Estadístiques dels encerts i errors.
+- **Mode Fosc:** Per repassar a qualsevol hora sense cansar la vista
+- **Precisió personalitzada:** Ajusta els decimals de les masses atòmiques
+- **Feedback immediat:** Estadístiques dels encerts i errors
 
 ## Llicència
 Aquest projecte està sota la llicència **Creative Commons Reconeixement-NoComercial-CompartirIgual 4.0 Internacional (CC BY-NC-SA 4.0)**. 
